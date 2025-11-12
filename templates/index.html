@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -513,6 +513,23 @@
             color: #4CAF50;
         }
 
+        /* Error Message */
+        .error-message {
+            background-color: #ffebee;
+            color: #c62828;
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 600px;
+            text-align: center;
+            border-left: 4px solid #c62828;
+        }
+
+        body.dark-mode .error-message {
+            background-color: #3f1a1a;
+            color: #ff8a80;
+        }
+
         /* Responsive Styles */
         @media (max-width: 768px) {
             .hero h1 {
@@ -579,7 +596,7 @@
         <p data-aos="fade-up" data-aos-delay="200">Fast, Free & Secure – Built for simplicity by Murli Kumar.</p>
         
         <div class="download-form" data-aos="fade-up" data-aos-delay="400">
-            <input type="text" class="url-input" id="videoUrl" placeholder="Paste YouTube video or playlist URL here...">
+            <input type="text" class="url-input" id="videoUrl" placeholder="Paste YouTube video or playlist URL here..." value="https://www.youtube.com/watch?v=dQw4w9WgXcQ">
             <button class="download-btn" id="downloadBtn">
                 <i class="fas fa-download"></i> Download
             </button>
@@ -707,6 +724,13 @@
             offset: 100
         });
 
+        // ✅ Base URL of your Flask backend (on Render)
+        const backendURL = "https://youtube-downloader-pum3.onrender.com";
+
+        // ✅ API Endpoints
+        const DOWNLOAD_API = `${backendURL}/api/download`;
+        const PLAYLIST_API = `${backendURL}/api/playlist`;
+
         // DOM Elements
         const themeToggle = document.getElementById('themeToggle');
         const videoUrlInput = document.getElementById('videoUrl');
@@ -777,7 +801,7 @@
             });
         });
 
-        // Fetch Videos (Mock Implementation)
+        // Fetch Videos
         async function fetchVideos() {
             const url = videoUrlInput.value.trim();
             
@@ -806,52 +830,112 @@
             }
         }
 
-        // Mock function to fetch video info
+        // Function to fetch video info from backend
         async function fetchVideoInfo(url) {
+            try {
+                loadingText.textContent = 'Connecting to YouTube...';
+                
+                const response = await fetch(`${DOWNLOAD_API}/info`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch video info: ${response.status}`);
+                }
+
+                const videoData = await response.json();
+                
+                loadingSpinner.style.display = 'none';
+                displayVideo(videoData);
+                showToast('Video ready for download!');
+            } catch (error) {
+                console.error('Error fetching video info:', error);
+                // Fallback to mock data if backend fails
+                console.log('Using mock data as fallback');
+                await fetchVideoInfoMock(url);
+            }
+        }
+
+        // Function to fetch playlist info from backend
+        async function fetchPlaylistInfo(url) {
+            try {
+                loadingText.textContent = 'Fetching playlist information...';
+                
+                const response = await fetch(`${PLAYLIST_API}/info`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ url })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch playlist info: ${response.status}`);
+                }
+
+                const playlistData = await response.json();
+                
+                loadingSpinner.style.display = 'none';
+                playlistData.forEach(video => displayVideo(video));
+                showToast('Playlist videos ready for download!');
+            } catch (error) {
+                console.error('Error fetching playlist info:', error);
+                // Fallback to mock data if backend fails
+                console.log('Using mock data as fallback');
+                await fetchPlaylistInfoMock(url);
+            }
+        }
+
+        // Mock function to fetch video info (fallback)
+        async function fetchVideoInfoMock(url) {
             // Simulate API call delay
             await new Promise(resolve => setTimeout(resolve, 1500));
             
             // Mock video data
             const videoData = {
-                title: 'Sample YouTube Video',
-                thumbnail: 'https://via.placeholder.com/300x180?text=Video+Thumbnail',
+                title: 'Sample YouTube Video - Mock Data',
+                thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=180&fit=crop',
                 duration: '10:30',
                 url: url
             };
             
             loadingSpinner.style.display = 'none';
             displayVideo(videoData);
-            showToast('Video ready for download!');
+            showToast('Video ready for download! (Mock Data)');
         }
 
-        // Mock function to fetch playlist info
-        async function fetchPlaylistInfo(url) {
+        // Mock function to fetch playlist info (fallback)
+        async function fetchPlaylistInfoMock(url) {
             // Simulate API call delay
             await new Promise(resolve => setTimeout(resolve, 2000));
             
             // Mock playlist data
             const playlistData = [
                 {
-                    title: 'Playlist Video 1',
-                    thumbnail: 'https://via.placeholder.com/300x180?text=Video+1',
+                    title: 'Playlist Video 1 - Mock Data',
+                    thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=180&fit=crop',
                     duration: '5:15',
                     url: url
                 },
                 {
-                    title: 'Playlist Video 2',
-                    thumbnail: 'https://via.placeholder.com/300x180?text=Video+2',
+                    title: 'Playlist Video 2 - Mock Data',
+                    thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=180&fit=crop',
                     duration: '7:42',
                     url: url
                 },
                 {
-                    title: 'Playlist Video 3',
-                    thumbnail: 'https://via.placeholder.com/300x180?text=Video+3',
+                    title: 'Playlist Video 3 - Mock Data',
+                    thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=180&fit=crop',
                     duration: '12:05',
                     url: url
                 },
                 {
-                    title: 'Playlist Video 4',
-                    thumbnail: 'https://via.placeholder.com/300x180?text=Video+4',
+                    title: 'Playlist Video 4 - Mock Data',
+                    thumbnail: 'https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=180&fit=crop',
                     duration: '8:30',
                     url: url
                 }
@@ -859,7 +943,7 @@
             
             loadingSpinner.style.display = 'none';
             playlistData.forEach(video => displayVideo(video));
-            showToast('Playlist videos ready for download!');
+            showToast('Playlist videos ready for download! (Mock Data)');
         }
 
         // Display video in the grid
@@ -868,7 +952,7 @@
             videoCard.className = 'video-card';
             videoCard.innerHTML = `
                 <div class="video-thumbnail">
-                    <img src="${videoInfo.thumbnail}" alt="${videoInfo.title}">
+                    <img src="${videoInfo.thumbnail}" alt="${videoInfo.title}" onerror="this.src='https://images.unsplash.com/photo-1611162617474-5b21e879e113?w=300&h=180&fit=crop'">
                     <div class="video-overlay">
                         <button class="download-btn-card">
                             <i class="fas fa-download"></i> Download ${currentFormat === 'video' ? 'Video' : 'Audio'}
@@ -890,9 +974,74 @@
             videoGrid.appendChild(videoCard);
         }
 
-        // Mock function to download video
-        function downloadVideo(url, format, quality) {
-            showToast(`Starting download: ${format} (${quality})`);
+        // Function to download video
+        async function downloadVideo(url, format, quality) {
+            try {
+                showToast(`Starting download: ${format} (${quality})`);
+                
+                // Show progress bar
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                progressText.textContent = 'Downloading: 0%';
+                
+                // Determine the correct API endpoint
+                const apiUrl = url.includes('list=') ? PLAYLIST_API : DOWNLOAD_API;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ 
+                        url, 
+                        format, 
+                        quality 
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+                }
+
+                // Get the filename from response headers or generate one
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `YouTube-${Date.now()}.${format === 'video' ? 'mp4' : 'mp3'}`;
+                
+                if (contentDisposition) {
+                    const filenameMatch = contentDisposition.match(/filename="(.+)"/);
+                    if (filenameMatch) {
+                        filename = filenameMatch[1];
+                    }
+                }
+
+                const blob = await response.blob();
+                const downloadUrl = URL.createObjectURL(blob);
+                
+                // Create download link and trigger download
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(downloadUrl);
+                
+                showToast('✅ Download complete!');
+                progressContainer.style.display = 'none';
+            } catch (error) {
+                console.error('Download error:', error);
+                showToast('❌ Download failed. Please try again.');
+                progressContainer.style.display = 'none';
+                
+                // Fallback to mock download
+                console.log('Using mock download as fallback');
+                downloadVideoMock(url, format, quality);
+            }
+        }
+
+        // Mock function to download video (fallback)
+        function downloadVideoMock(url, format, quality) {
+            showToast(`Starting download: ${format} (${quality}) - Mock`);
             
             // Show progress bar
             progressContainer.style.display = 'block';
@@ -906,13 +1055,46 @@
                 if (progress >= 100) {
                     progress = 100;
                     clearInterval(interval);
-                    showToast('Download completed!');
+                    showToast('Download completed! (Mock)');
+                    progressContainer.style.display = 'none';
+                    
+                    // Create a mock download file
+                    const mockBlob = new Blob(['This is a mock download file. In production, this would be your actual video.'], { type: 'text/plain' });
+                    const downloadUrl = URL.createObjectURL(mockBlob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = `mock-download-${Date.now()}.txt`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(downloadUrl);
                 }
                 
                 progressBar.style.width = `${progress}%`;
                 progressText.textContent = `Downloading: ${Math.round(progress)}%`;
             }, 200);
         }
+
+        // Test backend connection on load
+        window.addEventListener('load', async () => {
+            console.log('Testing backend connection...');
+            try {
+                const response = await fetch(`${DOWNLOAD_API}/info`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ' })
+                });
+                
+                if (response.ok) {
+                    console.log('✅ Backend connection successful!');
+                } else {
+                    console.log('⚠️ Backend returned error:', response.status);
+                }
+            } catch (error) {
+                console.log('❌ Backend connection failed:', error.message);
+                console.log('Using mock data fallback mode');
+            }
+        });
     </script>
 </body>
 </html>
